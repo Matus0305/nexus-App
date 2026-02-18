@@ -8,6 +8,7 @@ function App() {
   const [año, setAño] = useState('')
   const [placa, setPlaca] = useState('')
   const [uso, setUso] = useState('Personal')
+  const [seccion, setSeccion] = useState('Vehículos')
 
   useEffect(() => {
     fetchAutos()
@@ -49,7 +50,35 @@ function App() {
           <div style={dividerStyle}></div>
           <p style={subtitleStyle}>GESTIÓN DE FLOTA</p>
         </header>
-
+           {/* Menú de Navegación Estilo Apple */}
+           <nav style={{ 
+             display: 'flex', 
+             justifyContent: 'center', 
+              gap: '10px', 
+              marginBottom: '30px' 
+            }}>
+          {['Vehículos', 'Finanzas', 'Registros'].map((item) => (
+            <button
+      key={item}
+      onClick={() => setSeccion(item)}
+      style={{
+        padding: '10px 20px',
+        borderRadius: '100px',
+        border: 'none',
+        backgroundColor: seccion === item ? '#ffffff' : 'rgba(255,255,255,0.05)',
+        color: seccion === item ? '#000' : '#888',
+        fontSize: '0.8rem',
+        fontWeight: '700',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease'
+      }}
+    >
+      {item}
+    </button>
+  ))}
+</nav>
+{seccion === 'Vehículos' && (
+  <>
         {/* FORMULARIO MEJORADO CON TAMAÑOS IGUALES */}
         <form onSubmit={agregarAuto} style={formStyle}>
           <div style={rowStyle}>
@@ -72,7 +101,21 @@ function App() {
             REGISTRAR VEHÍCULO
           </button>
         </form>
+</>
+)}
+{seccion === 'Finanzas' && (
+  <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+    <h2 style={{ color: '#fff' }}>Módulo Financiero</h2>
+    <p>Próximamente: Control de ingresos y gastos de Nexus.</p>
+  </div>
+)}
 
+{seccion === 'Registros' && (
+  <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+    <h2 style={{ color: '#fff' }}>Historial de Registros</h2>
+    <p>Próximamente: Bitácora de movimientos del sistema.</p>
+  </div>
+)}
         <div style={gridStyle}>
           {autos.length > 0 ? autos.map(auto => (
             <div key={auto.id} style={cardStyle}>
