@@ -110,7 +110,7 @@ function App() {
 const containerStyle = {
   backgroundColor: '#000000',
   minHeight: '100vh',
-  width: '100%',
+  width: '100vw',
   margin: 0,
   padding: 0,
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
