@@ -47,7 +47,7 @@ function App() {
         <header style={headerStyle}>
           <h1 style={titleStyle}>NEXUS <span style={thinStyle}>APP</span></h1>
           <div style={dividerStyle}></div>
-          <p style={subtitleStyle}>GESTIÓN DE FLOTA EL SALVADOR</p>
+          <p style={subtitleStyle}>GESTIÓN DE FLOTA</p>
         </header>
 
         {/* FORMULARIO MEJORADO CON TAMAÑOS IGUALES */}
