@@ -251,4 +251,16 @@ const selectStyle = { ...inputStyle, appearance: 'none' }
 const buttonStyle = { padding: '18px', backgroundColor: '#fff', color: '#000', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', marginTop: '10px' }
 const labelStyle = { fontSize: '0.65rem', color: '#555', fontWeight: '800', marginBottom: '-8px', marginLeft: '5px', textTransform: 'uppercase' }
 const gridStyle = { display: 'grid', gap: '15px' }
-const cardStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '
+const cardStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '24px', border: '1px solid #1a1a1a' }
+const placaBadge = { color: '#444', fontSize: '0.75rem', fontWeight: '800' }
+const cardTitle = { fontSize: '1.4rem', margin: '5px 0', fontWeight: '700' }
+const cardInfo = { color: '#666', fontSize: '1rem', margin: 0 }
+const deleteBtn = { background: 'none', border: 'none', color: '#222', cursor: 'pointer', fontSize: '1.2rem' }
+const fintechCard = { background: 'linear-gradient(145deg, #111, #000)', padding: '35px', borderRadius: '32px', border: '1px solid #222', textAlign: 'center' }
+const actionBtn = { flex: 1, padding: '14px', borderRadius: '14px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: '800', fontSize: '0.85rem' }
+const accountItem = { display: 'flex', justifyContent: 'space-between', padding: '22px', background: '#0a0a0a', borderRadius: '20px', border: '1px solid #111', marginBottom: '12px' }
+const navStyle = { position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: '360px', backgroundColor: 'rgba(10, 10, 10, 0.7)', backdropFilter: 'blur(25px)', display: 'flex', justifyContent: 'space-around', padding: '18px 0', borderRadius: '35px', border: '1px solid rgba(255,255,255,0.05)' }
+const navItem = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }
+const navLabel = { fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }
+
+export default App
