@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 
 function App() {
+  // --- ESTADOS ---
   const [seccion, setSeccion] = useState('Vehículos')
   const [autos, setAutos] = useState([])
-  const [mostrarForm, setMostrarForm] = useState(false)
+  const [mostrarModal, setMostrarModal] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
 
   // Estados Formulario
@@ -12,6 +13,7 @@ function App() {
   const [año, setAño] = useState(''); const [placa, setPlaca] = useState('');
   const [uso, setUso] = useState('Personal');
 
+  // --- LOGICA ---
   useEffect(() => { fetchAutos() }, [])
 
   async function fetchAutos() {
@@ -19,129 +21,172 @@ function App() {
     if (data) setAutos(data)
   }
 
-  async function manejarEnvioAuto(e) {
+  async function manejarEnvio(e) {
     e.preventDefault()
-    const datos = { marca, modelo, año, placa, uso }
+    const datos = { marca, modelo, año: parseInt(año), placa, uso }
+    
     if (editandoId) {
-      await supabase.from('vehiculos').update(datos).eq('id', editandoId)
-      setEditandoId(null)
+      const { error } = await supabase.from('vehiculos').update(datos).eq('id', editandoId)
+      if (!error) alert("Unidad Actualizada")
     } else {
-      await supabase.from('vehiculos').insert([datos])
+      const { error } = await supabase.from('vehiculos').insert([datos])
+      if (!error) alert("Unidad Registrada")
     }
-    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setMostrarForm(false)
+    
+    cerrarYLimpiar()
     fetchAutos()
   }
 
-  return (
-    <div style={containerStyle}>
-      <div style={contentWrapper}>
-        
-        <header style={headerStyle}>
-          <h1 style={titleStyle}>NEXUS <span style={{fontWeight:'200', color:'#444'}}>SYSTEMS</span></h1>
-          <p style={subtitleStyle}>MANAGEMENT PORTAL</p>
-        </header>
+  function prepararEdicion(auto) {
+    setEditandoId(auto.id)
+    setMarca(auto.marca); setModelo(auto.modelo)
+    setAño(auto.año); setPlaca(auto.placa); setUso(auto.uso)
+    setMostrarModal(true)
+  }
 
+  async function borrarAuto(id) {
+    if (confirm("¿Dar de baja esta unidad?")) {
+      const { error } = await supabase.from('vehiculos').delete().eq('id', id)
+      if (!error) fetchAutos()
+    }
+  }
+
+  function cerrarYLimpiar() {
+    setMostrarModal(false); setEditandoId(null)
+    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal')
+  }
+
+  return (
+    <div style={appContainer}>
+      {/* HEADER PREMIUM */}
+      <header style={headerStyle}>
+        <div style={logoBadge}>NEXUS SYSTEMS</div>
+        <h1 style={mainTitle}>Gestión de Flota</h1>
+      </header>
+
+      {/* BODY SECTIONS */}
+      <main style={mainContent}>
         {seccion === 'Vehículos' && (
           <>
-            {/* BOTÓN DESPLEGABLE */}
-            <button 
-              onClick={() => setMostrarForm(!mostrarForm)} 
-              style={actionButtonStyle}
-            >
-              {mostrarForm ? '− CERRAR PANEL' : '+ REGISTRAR UNIDAD'}
-            </button>
+            <div style={statsRow}>
+              <div style={statItem}><span>{autos.length}</span><label>UNIDADES</label></div>
+              <button onClick={() => setMostrarModal(true)} style={addBtn}>+ NUEVA UNIDAD</button>
+            </div>
 
-            {/* FORMULARIO DESPLEGABLE */}
-            {mostrarForm && (
-              <form onSubmit={manejarEnvioAuto} style={formStyle}>
-                <div style={inputGroup}>
-                  <input placeholder="MARCA" value={marca} onChange={e => setMarca(e.target.value)} style={minimalInput} required />
-                  <input placeholder="MODELO" value={modelo} onChange={e => setModelo(e.target.value)} style={minimalInput} required />
-                </div>
-                <div style={inputGroup}>
-                  <input placeholder="AÑO" type="number" value={año} onChange={e => setAño(e.target.value)} style={minimalInput} required />
-                  <input placeholder="PLACA" value={placa} onChange={e => setPlaca(e.target.value)} style={minimalInput} required />
-                </div>
-                <select value={uso} onChange={e => setUso(e.target.value)} style={minimalSelect}>
-                  <option value="Personal">PERSONAL</option>
-                  <option value="Uber / inDrive">PLATAFORMA</option>
-                  <option value="Renta Privada">RENTA</option>
-                </select>
-                <button type="submit" style={submitButtonStyle}>CONFIRMAR REGISTRO</button>
-              </form>
-            )}
-
-            {/* LISTADO TIPO DOCUMENTO */}
-            <div style={{marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '1px', backgroundColor: '#222', border: '1px solid #222'}}>
+            <div style={gridStyle}>
               {autos.map(auto => (
-                <div key={auto.id} style={documentCard}>
-                  <div style={docHeader}>
-                    <span style={docId}>UNIT_ID: {auto.id.toString().padStart(3, '0')}</span>
-                    <div style={{display:'flex', gap:'20px'}}>
-                       <button onClick={() => {prepararEdicion(auto); setMostrarForm(true)}} style={docLink}>EDITAR</button>
-                       <button onClick={() => borrarAuto(auto.id)} style={{...docLink, color:'#ff453a'}}>ELIMINAR</button>
+                <div key={auto.id} style={glassCard}>
+                  <div style={cardHeader}>
+                    <span style={unitTag}>ID-{auto.id}</span>
+                    <div style={cardActions}>
+                      <button onClick={() => prepararEdicion(auto)} style={iconBtn}>✎</button>
+                      <button onClick={() => borrarAuto(auto.id)} style={{...iconBtn, color: '#ff453a'}}>✕</button>
                     </div>
                   </div>
-                  
-                  <div style={docBody}>
-                    <div style={{flex: 2}}>
-                      <h2 style={docTitle}>{auto.marca} {auto.modelo}</h2>
-                      <p style={docMeta}>{auto.año} — SV_{auto.placa.toUpperCase()}</p>
+                  <h2 style={cardTitle}>{auto.marca} <span style={{fontWeight: 300}}>{auto.modelo}</span></h2>
+                  <div style={cardFooter}>
+                    <div style={metaData}>
+                      <span>{auto.año}</span>
+                      <span style={dot}>•</span>
+                      <span>{auto.placa.toUpperCase()}</span>
                     </div>
-                    <div style={{flex: 1, textAlign: 'right'}}>
-                      <span style={docStatusBadge}>{auto.uso.toUpperCase()}</span>
-                    </div>
+                    <div style={statusBadge}>{auto.uso}</div>
                   </div>
                 </div>
               ))}
             </div>
           </>
         )}
+      </main>
 
-        {/* NAVEGACIÓN MINIMALISTA */}
-        <nav style={navStyle}>
-          {['Vehículos', 'Finanzas', 'Registros'].map(item => (
-            <div key={item} onClick={() => setSeccion(item)} style={{
-              ...navItem, 
-              opacity: seccion === item ? 1 : 0.3,
-              borderTop: seccion === item ? '2px solid white' : '2px solid transparent'
-            }}>
-              {item === 'Vehículos' ? 'FLOTA' : item.toUpperCase()}
+      {/* FORMULARIO MODAL (EL CORAZON DEL CAMBIO) */}
+      {mostrarModal && (
+        <div style={modalOverlay}>
+          <div style={modalContent}>
+            <div style={modalGlass}>
+              <div style={modalHeader}>
+                <h3>{editandoId ? 'EDITAR UNIDAD' : 'REGISTRO TÉCNICO'}</h3>
+                <button onClick={cerrarYLimpiar} style={closeModalBtn}>✕</button>
+              </div>
+              
+              <form onSubmit={manejarEnvio} style={formLayout}>
+                <div style={inputRow}>
+                  <div style={inputWrap}><label>MARCA</label><input value={marca} onChange={e => setMarca(e.target.value)} required /></div>
+                  <div style={inputWrap}><label>MODELO</label><input value={modelo} onChange={e => setModelo(e.target.value)} required /></div>
+                </div>
+                <div style={inputRow}>
+                  <div style={inputWrap}><label>AÑO</label><input type="number" value={año} onChange={e => setAño(e.target.value)} required /></div>
+                  <div style={inputWrap}><label>PLACA</label><input value={placa} onChange={e => setPlaca(e.target.value)} required /></div>
+                </div>
+                <div style={inputWrap}>
+                  <label>TIPO DE USO</label>
+                  <select value={uso} onChange={e => setUso(e.target.value)}>
+                    <option value="Personal">Personal</option>
+                    <option value="Uber / inDrive">Plataforma</option>
+                    <option value="Renta Privada">Renta</option>
+                  </select>
+                </div>
+                <button type="submit" style={submitBtn}>
+                  {editandoId ? 'GUARDAR CAMBIOS' : 'CONFIRMAR REGISTRO'}
+                </button>
+              </form>
             </div>
-          ))}
-        </nav>
-      </div>
+          </div>
+        </div>
+      )}
+
+      {/* BARRA NAVEGACION INFERIOR */}
+      <nav style={navBar}>
+        {['Vehículos', 'Finanzas', 'Registros'].map(item => (
+          <div key={item} onClick={() => setSeccion(item)} style={{
+            ...navTab, 
+            color: seccion === item ? '#fff' : '#444',
+            borderTop: seccion === item ? '2px solid #fff' : '2px solid transparent'
+          }}>
+            {item === 'Vehículos' ? 'FLOTA' : item.toUpperCase()}
+          </div>
+        ))}
+      </nav>
     </div>
   )
 }
 
-// --- ESTILOS MINIMALISTAS (TIPO DOCUMENTO) ---
+// --- ESTILOS (Gris Carbón + Blanco Eléctrico + Glassmorphism) ---
 
-const containerStyle = { backgroundColor: '#050505', minHeight: '100vh', color: '#fff', fontFamily: 'monospace' }
-const contentWrapper = { maxWidth: '600px', margin: '0 auto', padding: '40px 20px' }
-const headerStyle = { marginBottom: '60px' }
-const titleStyle = { fontSize: '1rem', letterSpacing: '4px', margin: 0 }
-const subtitleStyle = { fontSize: '0.5rem', color: '#444', letterSpacing: '2px' }
+const appContainer = { backgroundColor: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }
+const headerStyle = { padding: '60px 20px 20px', textAlign: 'center' }
+const logoBadge = { fontSize: '0.6rem', letterSpacing: '4px', color: '#666', marginBottom: '10px' }
+const mainTitle = { fontSize: '2.2rem', fontWeight: '800', margin: 0, letterSpacing: '-1px' }
 
-const actionButtonStyle = { width: '100%', padding: '15px', backgroundColor: 'transparent', color: '#fff', border: '1px dashed #333', cursor: 'pointer', fontSize: '0.7rem', letterSpacing: '2px', marginBottom: '20px' }
+const mainContent = { padding: '0 20px 120px' }
+const statsRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }
+const statItem = { display: 'flex', flexDirection: 'column' }
+const addBtn = { background: '#fff', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: '700', fontSize: '0.7rem', cursor: 'pointer' }
 
-const formStyle = { display: 'flex', flexDirection: 'column', gap: '10px', animation: 'fadeIn 0.3s ease' }
-const inputGroup = { display: 'flex', gap: '10px' }
-const minimalInput = { flex: 1, background: '#111', border: 'none', padding: '15px', color: '#fff', fontSize: '0.7rem', outline: 'none' }
-const minimalSelect = { ...minimalInput, appearance: 'none' }
-const submitButtonStyle = { padding: '15px', backgroundColor: '#fff', color: '#000', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.7rem' }
+const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }
+const glassCard = { background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px', backdropFilter: 'blur(10px)' }
+const cardHeader = { display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }
+const unitTag = { fontSize: '0.6rem', color: '#444', fontWeight: 'bold' }
+const cardTitle = { fontSize: '1.4rem', margin: '0 0 15px 0' }
+const cardFooter = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+const metaData = { color: '#666', fontSize: '0.8rem' }
+const dot = { margin: '0 8px' }
+const statusBadge = { background: 'rgba(255,255,255,0.05)', padding: '5px 12px', borderRadius: '8px', fontSize: '0.6rem', fontWeight: 'bold' }
+const iconBtn = { background: 'none', border: 'none', color: '#444', fontSize: '1.1rem', cursor: 'pointer', transition: '0.3s' }
 
-// ESTILO FICHA TÉCNICA
-const documentCard = { backgroundColor: '#000', padding: '25px', borderBottom: '1px solid #111' }
-const docHeader = { display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '1px solid #111', paddingBottom: '10px' }
-const docId = { fontSize: '0.6rem', color: '#444' }
-const docLink = { background: 'none', border: 'none', color: '#666', fontSize: '0.6rem', cursor: 'pointer', letterSpacing: '1px' }
-const docBody = { display: 'flex', alignItems: 'center' }
-const docTitle = { fontSize: '1.2rem', margin: 0, fontWeight: '400', letterSpacing: '-0.5px' }
-const docMeta = { fontSize: '0.7rem', color: '#555', margin: '5px 0 0 0' }
-const docStatusBadge = { fontSize: '0.5rem', border: '1px solid #333', padding: '4px 8px', letterSpacing: '1px', color: '#888' }
+// ESTILOS MODAL
+const modalOverlay = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(15px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }
+const modalContent = { width: '90%', maxWidth: '450px' }
+const modalGlass = { background: '#111', border: '1px solid #222', borderRadius: '32px', padding: '30px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }
+const modalHeader = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }
+const closeModalBtn = { background: '#222', border: 'none', color: '#fff', width: '35px', height: '35px', borderRadius: '50%', cursor: 'pointer' }
 
-const navStyle = { position: 'fixed', bottom: 0, left: 0, width: '100%', display: 'flex', justifyContent: 'center', backgroundColor: '#000', borderTop: '1px solid #111' }
-const navItem = { padding: '20px', fontSize: '0.6rem', letterSpacing: '2px', cursor: 'pointer', transition: '0.3s' }
+const formLayout = { display: 'flex', flexDirection: 'column', gap: '20px' }
+const inputRow = { display: 'flex', gap: '15px' }
+const inputWrap = { display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }
+const submitBtn = { marginTop: '10px', padding: '18px', borderRadius: '16px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: 'bold', cursor: 'pointer' }
+
+const navBar = { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '80px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)', borderTop: '1px solid #111', display: 'flex', justifyContent: 'space-around', zIndex: 900 }
+const navTab = { padding: '25px 0', fontSize: '0.65rem', fontWeight: '700', letterSpacing: '1px', cursor: 'pointer', flex: 1, textAlign: 'center' }
 
 export default App
