@@ -104,11 +104,17 @@ function App() {
                   <div style={styles.cardHeader}>
                      <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                       <div style={{
-                       width: '8px', 
-                       height: '8px', 
+                       width: '10px', 
+                       height: '10px', 
                        borderRadius: '50%', 
-                       backgroundColor: auto.salud === 'Operativo' ? '#32d74b' : auto.salud === 'Preventivo' ? '#ffd60a' : '#ff453a',
-                       boxShadow: `0 0 10px ${auto.salud === 'Operativo' ? '#32d74b' : auto.salud === 'Preventivo' ? '#ffd60a' : '#ff453a'}`
+                       backgroundColor: 
+                       auto.salud ?.toLowerCase() === 'Taller' ? '#ff453a' : 
+                       auto.salud ?.toLowerCase()  === 'Preventivo' ? '#ffd60a' : '#32d74b',
+                       boxShadow: `0 0 12px ${
+                        auto.salud?.toLowerCase() === 'Taller' ? '#ff453a' : 
+                        auto.salud?.toLowerCase() === 'Preventivo' ? '#ffd60a' : '#32d74b'
+                       }`,
+                       transition: 'all 0.3s ease'
                     }}></div>
                     <span style={styles.unitTag}>UNIT-{auto.id}</span>
                      </div>
