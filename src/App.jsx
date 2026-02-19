@@ -2,120 +2,34 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 
 function App() {
-  // --- NAVEGACIÓN Y DATOS ---
   const [seccion, setSeccion] = useState('Vehículos')
   const [autos, setAutos] = useState([])
-  const [historialJornadas, setHistorialJornadas] = useState([])
-  
-  // --- ESTADO PARA EDICIÓN ---
+  const [mostrarForm, setMostrarForm] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
 
-  // --- ESTADOS PARA FORMULARIO VEHÍCULOS ---
-  const [marca, setMarca] = useState('')
-  const [modelo, setModelo] = useState('')
-  const [año, setAño] = useState('')
-  const [placa, setPlaca] = useState('')
-  const [uso, setUso] = useState('Personal')
+  // Estados Formulario
+  const [marca, setMarca] = useState(''); const [modelo, setModelo] = useState('');
+  const [año, setAño] = useState(''); const [placa, setPlaca] = useState('');
+  const [uso, setUso] = useState('Personal');
 
-  // --- ESTADOS PARA JORNADA ---
-  const [plataforma, setPlataforma] = useState('Uber')
-  const [monto, setMonto] = useState('')
-  const [propina, setPropina] = useState('')
-  const [autoSeleccionado, setAutoSeleccionado] = useState('')
+  useEffect(() => { fetchAutos() }, [])
 
-  useEffect(() => {
-    fetchAutos()
-    fetchJornadas()
-  }, [])
-
-  // --- LÓGICA DE VEHÍCULOS ---
   async function fetchAutos() {
     const { data } = await supabase.from('vehiculos').select('*').order('id', { ascending: false })
     if (data) setAutos(data)
   }
 
- async function manejarEnvioAuto(e) {
-  e.preventDefault();
-  
-  // Convertimos a los tipos de datos exactos que espera Supabase
-  const datos = { 
-    marca: marca.trim(), 
-    modelo: modelo.trim(), 
-    año: parseInt(año), 
-    placa: placa.trim(), 
-    uso: uso 
-  };
-
-  if (editandoId) {
-    // IMPORTANTE: Usamos el ID directamente como se guardó
-    const { data, error } = await supabase
-      .from('vehiculos')
-      .update(datos)
-      .match({ id: editandoId }); // 'match' es a veces más efectivo que 'eq' para IDs numéricos
-
-    if (error) {
-      alert("Error de Supabase: " + error.message);
-      return;
-    }
-    
-    alert("✅ Cambios guardados en base de datos");
-    setEditandoId(null);
-  } else {
-    const { error } = await supabase.from('vehiculos').insert([datos]);
-    if (error) {
-      alert("Error al crear: " + error.message);
-      return;
-    }
-    alert("✅ Vehículo registrado");
-  }
-
-  // Limpiar campos y RECARGAR
-  setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal');
-  
-  // Agregamos un pequeño retraso para dar tiempo a Supabase de propagar el cambio
-  setTimeout(() => {
-    fetchAutos();
-  }, 500);
-}
-
-  function prepararEdicion(auto) {
-    setEditandoId(auto.id)
-    setMarca(auto.marca)
-    setModelo(auto.modelo)
-    setAño(auto.año)
-    setPlaca(auto.placa)
-    setUso(auto.uso)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  async function borrarAuto(id) {
-    if (confirm("¿Eliminar este vehículo?")) {
-      const { error } = await supabase.from('vehiculos').delete().eq('id', id)
-      if (!error) fetchAutos()
-    }
-  }
-
-  // --- LÓGICA DE JORNADAS ---
-  async function fetchJornadas() {
-    const { data } = await supabase.from('jornadas').select('*, vehiculos(marca, modelo)').order('id', { ascending: false })
-    if (data) setHistorialJornadas(data)
-  }
-
-  async function guardarJornada(e) {
+  async function manejarEnvioAuto(e) {
     e.preventDefault()
-    const { error } = await supabase.from('jornadas').insert([{ 
-      plataforma, monto_plataforma: parseFloat(monto), propina: parseFloat(propina || 0), auto_id: parseInt(autoSeleccionado) 
-    }])
-    if (!error) {
-      alert("✅ Jornada guardada"); setMonto(''); setPropina(''); fetchJornadas()
+    const datos = { marca, modelo, año, placa, uso }
+    if (editandoId) {
+      await supabase.from('vehiculos').update(datos).eq('id', editandoId)
+      setEditandoId(null)
+    } else {
+      await supabase.from('vehiculos').insert([datos])
     }
-  }
-
-  async function borrarJornada(id) {
-    if (confirm("¿Eliminar registro?")) {
-      const { error } = await supabase.from('jornadas').delete().eq('id', id)
-      if (!error) fetchJornadas()
-    }
+    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setMostrarForm(false)
+    fetchAutos()
   }
 
   return (
@@ -123,49 +37,59 @@ function App() {
       <div style={contentWrapper}>
         
         <header style={headerStyle}>
-          <h1 style={titleStyle}>NEXUS <span style={thinStyle}>APP</span></h1>
-          <p style={subtitleStyle}>{seccion.toUpperCase()}</p>
+          <h1 style={titleStyle}>NEXUS <span style={{fontWeight:'200', color:'#444'}}>SYSTEMS</span></h1>
+          <p style={subtitleStyle}>MANAGEMENT PORTAL</p>
         </header>
 
-        {/* --- MÓDULO VEHÍCULOS --- */}
         {seccion === 'Vehículos' && (
           <>
-            <form onSubmit={manejarEnvioAuto} style={formStyle}>
-              <h3 style={{marginTop: 0, fontSize: '1.2rem'}}>{editandoId ? '✎ Editando Auto' : 'Nuevo Vehículo'}</h3>
-              <div style={rowStyle}>
-                <input placeholder="Marca" value={marca} onChange={e => setMarca(e.target.value)} style={inputStyle} required />
-                <input placeholder="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} style={inputStyle} required />
-              </div>
-              <div style={rowStyle}>
-                <input placeholder="Año" type="number" value={año} onChange={e => setAño(e.target.value)} style={smallInputStyle} required />
-                <input placeholder="Placa" value={placa} onChange={e => setPlaca(e.target.value)} style={smallInputStyle} required />
-                <select value={uso} onChange={e => setUso(e.target.value)} style={selectStyle}>
-                  <option value="Personal">Personal</option>
-                  <option value="Uber / inDrive">Uber</option>
-                  <option value="Renta Privada">Renta</option>
-                  <option value="Mantenimiento">Taller</option>
-                </select>
-              </div>
-              <button type="submit" style={buttonStyle}>
-                {editandoId ? 'GUARDAR CAMBIOS' : 'REGISTRAR VEHÍCULO'}
-              </button>
-              {editandoId && (
-                <button type="button" onClick={() => {setEditandoId(null); setMarca(''); setModelo(''); setAño(''); setPlaca('');}} style={{...buttonStyle, backgroundColor: '#222', color: '#fff', marginTop: '5px'}}>CANCELAR</button>
-              )}
-            </form>
+            {/* BOTÓN DESPLEGABLE */}
+            <button 
+              onClick={() => setMostrarForm(!mostrarForm)} 
+              style={actionButtonStyle}
+            >
+              {mostrarForm ? '− CERRAR PANEL' : '+ REGISTRAR UNIDAD'}
+            </button>
 
-            <div style={gridStyle}>
+            {/* FORMULARIO DESPLEGABLE */}
+            {mostrarForm && (
+              <form onSubmit={manejarEnvioAuto} style={formStyle}>
+                <div style={inputGroup}>
+                  <input placeholder="MARCA" value={marca} onChange={e => setMarca(e.target.value)} style={minimalInput} required />
+                  <input placeholder="MODELO" value={modelo} onChange={e => setModelo(e.target.value)} style={minimalInput} required />
+                </div>
+                <div style={inputGroup}>
+                  <input placeholder="AÑO" type="number" value={año} onChange={e => setAño(e.target.value)} style={minimalInput} required />
+                  <input placeholder="PLACA" value={placa} onChange={e => setPlaca(e.target.value)} style={minimalInput} required />
+                </div>
+                <select value={uso} onChange={e => setUso(e.target.value)} style={minimalSelect}>
+                  <option value="Personal">PERSONAL</option>
+                  <option value="Uber / inDrive">PLATAFORMA</option>
+                  <option value="Renta Privada">RENTA</option>
+                </select>
+                <button type="submit" style={submitButtonStyle}>CONFIRMAR REGISTRO</button>
+              </form>
+            )}
+
+            {/* LISTADO TIPO DOCUMENTO */}
+            <div style={{marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '1px', backgroundColor: '#222', border: '1px solid #222'}}>
               {autos.map(auto => (
-                <div key={auto.id} style={cardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <span style={placaBadge}>{auto.placa}</span>
-                      <h3 style={cardTitle}>{auto.marca} {auto.modelo}</h3>
-                      <p style={cardInfo}>{auto.uso}</p>
+                <div key={auto.id} style={documentCard}>
+                  <div style={docHeader}>
+                    <span style={docId}>UNIT_ID: {auto.id.toString().padStart(3, '0')}</span>
+                    <div style={{display:'flex', gap:'20px'}}>
+                       <button onClick={() => {prepararEdicion(auto); setMostrarForm(true)}} style={docLink}>EDITAR</button>
+                       <button onClick={() => borrarAuto(auto.id)} style={{...docLink, color:'#ff453a'}}>ELIMINAR</button>
                     </div>
-                    <div style={{display: 'flex', gap: '15px'}}>
-                      <button onClick={() => prepararEdicion(auto)} style={{background:'none', border:'none', color:'#fff', cursor:'pointer', fontSize: '1.2rem'}}>✎</button>
-                      <button onClick={() => borrarAuto(auto.id)} style={deleteBtn}>✕</button>
+                  </div>
+                  
+                  <div style={docBody}>
+                    <div style={{flex: 2}}>
+                      <h2 style={docTitle}>{auto.marca} {auto.modelo}</h2>
+                      <p style={docMeta}>{auto.año} — SV_{auto.placa.toUpperCase()}</p>
+                    </div>
+                    <div style={{flex: 1, textAlign: 'right'}}>
+                      <span style={docStatusBadge}>{auto.uso.toUpperCase()}</span>
                     </div>
                   </div>
                 </div>
@@ -174,42 +98,50 @@ function App() {
           </>
         )}
 
-        {/* --- OTROS MÓDULOS (BREVE) --- */}
-        {seccion === 'Finanzas' && <div style={{textAlign:'center', padding:'50px'}}>Módulo de Banco en desarrollo</div>}
-        {seccion === 'Registros' && <div style={{textAlign:'center', padding:'50px'}}>Módulo de Jornadas en desarrollo</div>}
-
-        {/* NAV INFERIOR */}
+        {/* NAVEGACIÓN MINIMALISTA */}
         <nav style={navStyle}>
-          <div style={navItem} onClick={() => setSeccion('Vehículos')}><span style={{fontSize:'1.2rem', opacity: seccion === 'Vehículos' ? 1 : 0.3}}>🚗</span><span style={{...navLabel, color: seccion === 'Vehículos' ? '#fff' : '#444'}}>Flota</span></div>
-          <div style={navItem} onClick={() => setSeccion('Finanzas')}><span style={{fontSize:'1.2rem', opacity: seccion === 'Finanzas' ? 1 : 0.3}}>🏦</span><span style={{...navLabel, color: seccion === 'Finanzas' ? '#fff' : '#444'}}>Banco</span></div>
-          <div style={navItem} onClick={() => setSeccion('Registros')}><span style={{fontSize:'1.2rem', opacity: seccion === 'Registros' ? 1 : 0.3}}>⏱️</span><span style={{...navLabel, color: seccion === 'Registros' ? '#fff' : '#444'}}>Jornada</span></div>
+          {['Vehículos', 'Finanzas', 'Registros'].map(item => (
+            <div key={item} onClick={() => setSeccion(item)} style={{
+              ...navItem, 
+              opacity: seccion === item ? 1 : 0.3,
+              borderTop: seccion === item ? '2px solid white' : '2px solid transparent'
+            }}>
+              {item === 'Vehículos' ? 'FLOTA' : item.toUpperCase()}
+            </div>
+          ))}
         </nav>
       </div>
     </div>
   )
 }
 
-// --- ESTILOS ---
-const containerStyle = { backgroundColor: '#000', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', color: '#fff', paddingBottom: '120px', fontFamily: '-apple-system, sans-serif' }
-const contentWrapper = { width: '100%', maxWidth: '500px', padding: '20px' }
-const headerStyle = { textAlign: 'center', margin: '40px 0' }
-const titleStyle = { fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-2px', margin: 0 }
-const thinStyle = { fontWeight: '200', color: '#666' }
-const subtitleStyle = { fontSize: '0.65rem', letterSpacing: '4px', color: '#444', fontWeight: '700' }
-const formStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '28px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }
-const rowStyle = { display: 'flex', gap: '10px' }
-const inputStyle = { flex: 1, backgroundColor: '#111', padding: '16px', borderRadius: '14px', border: '1px solid #222', color: '#fff', fontSize: '16px', outline: 'none' }
-const smallInputStyle = { ...inputStyle, flex: 1 }
-const selectStyle = { ...inputStyle, appearance: 'none' }
-const buttonStyle = { padding: '18px', backgroundColor: '#fff', color: '#000', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', marginTop: '10px' }
-const gridStyle = { display: 'grid', gap: '15px' }
-const cardStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '24px', border: '1px solid #1a1a1a' }
-const placaBadge = { color: '#444', fontSize: '0.75rem', fontWeight: '800' }
-const cardTitle = { fontSize: '1.4rem', margin: '5px 0', fontWeight: '700' }
-const cardInfo = { color: '#666', fontSize: '1rem', margin: 0 }
-const deleteBtn = { background: 'none', border: 'none', color: '#222', cursor: 'pointer', fontSize: '1.2rem' }
-const navStyle = { position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: '360px', backgroundColor: 'rgba(10, 10, 10, 0.7)', backdropFilter: 'blur(25px)', display: 'flex', justifyContent: 'space-around', padding: '18px 0', borderRadius: '35px', border: '1px solid rgba(255,255,255,0.05)' }
-const navItem = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }
-const navLabel = { fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }
+// --- ESTILOS MINIMALISTAS (TIPO DOCUMENTO) ---
+
+const containerStyle = { backgroundColor: '#050505', minHeight: '100vh', color: '#fff', fontFamily: 'monospace' }
+const contentWrapper = { maxWidth: '600px', margin: '0 auto', padding: '40px 20px' }
+const headerStyle = { marginBottom: '60px' }
+const titleStyle = { fontSize: '1rem', letterSpacing: '4px', margin: 0 }
+const subtitleStyle = { fontSize: '0.5rem', color: '#444', letterSpacing: '2px' }
+
+const actionButtonStyle = { width: '100%', padding: '15px', backgroundColor: 'transparent', color: '#fff', border: '1px dashed #333', cursor: 'pointer', fontSize: '0.7rem', letterSpacing: '2px', marginBottom: '20px' }
+
+const formStyle = { display: 'flex', flexDirection: 'column', gap: '10px', animation: 'fadeIn 0.3s ease' }
+const inputGroup = { display: 'flex', gap: '10px' }
+const minimalInput = { flex: 1, background: '#111', border: 'none', padding: '15px', color: '#fff', fontSize: '0.7rem', outline: 'none' }
+const minimalSelect = { ...minimalInput, appearance: 'none' }
+const submitButtonStyle = { padding: '15px', backgroundColor: '#fff', color: '#000', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.7rem' }
+
+// ESTILO FICHA TÉCNICA
+const documentCard = { backgroundColor: '#000', padding: '25px', borderBottom: '1px solid #111' }
+const docHeader = { display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '1px solid #111', paddingBottom: '10px' }
+const docId = { fontSize: '0.6rem', color: '#444' }
+const docLink = { background: 'none', border: 'none', color: '#666', fontSize: '0.6rem', cursor: 'pointer', letterSpacing: '1px' }
+const docBody = { display: 'flex', alignItems: 'center' }
+const docTitle = { fontSize: '1.2rem', margin: 0, fontWeight: '400', letterSpacing: '-0.5px' }
+const docMeta = { fontSize: '0.7rem', color: '#555', margin: '5px 0 0 0' }
+const docStatusBadge = { fontSize: '0.5rem', border: '1px solid #333', padding: '4px 8px', letterSpacing: '1px', color: '#888' }
+
+const navStyle = { position: 'fixed', bottom: 0, left: 0, width: '100%', display: 'flex', justifyContent: 'center', backgroundColor: '#000', borderTop: '1px solid #111' }
+const navItem = { padding: '20px', fontSize: '0.6rem', letterSpacing: '2px', cursor: 'pointer', transition: '0.3s' }
 
 export default App
