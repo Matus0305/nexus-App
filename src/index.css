@@ -1,13 +1,7 @@
-/* Esto obliga a que toda la pantalla sea negra, sin importar el tamaño */
-body, html {
+body, html, #root {
   margin: 0;
   padding: 0;
-  background-color: #000000 !important;
-  width: 100%;
-  height: 100%;
-}
-
-#root {
   background-color: #000000;
   min-height: 100vh;
+  width: 100%;
 }
