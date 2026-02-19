@@ -14,6 +14,7 @@ function App() {
   const [año, setAño] = useState('')
   const [placa, setPlaca] = useState('')
   const [uso, setUso] = useState('Personal')
+  const [salud, setSalud] = useState('Operativo')
 
   // --- CARGA DE DATOS ---
   useEffect(() => {
@@ -100,6 +101,16 @@ function App() {
               {autos.map(auto => (
                 <div key={auto.id} style={styles.glassCard}>
                   <div style={styles.cardHeader}>
+                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                      <div style={{
+                       width: '8px', 
+                       height: '8px', 
+                       borderRadius: '50%', 
+                       backgroundColor: auto.salud === 'Operativo' ? '#32d74b' : auto.salud === 'Preventivo' ? '#ffd60a' : '#ff453a',
+                       boxShadow: `0 0 10px ${auto.salud === 'Operativo' ? '#32d74b' : auto.salud === 'Preventivo' ? '#ffd60a' : '#ff453a'}`
+                    }}></div>
+                    <span style={styles.unitTag}>UNIT-{auto.id}</span>
+                     </div>
                     <span style={styles.unitTag}>ID-{auto.id}</span>
                     <div style={styles.cardActions}>
                       <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
@@ -154,6 +165,14 @@ function App() {
                   <option value="Personal">Personal</option>
                   <option value="Uber / inDrive">Plataforma</option>
                   <option value="Renta Privada">Renta</option>
+                </select>
+              </div>
+              <div style={styles.inputWrap}>
+                <label style={styles.label}>ESTADO MECÁNICO</label>
+                <select style={styles.input} value={salud} onChange={e => setSalud(e.target.value)}>
+                <option value="Operativo">OPERATIVO</option>
+                <option value="Preventivo">MANTENIMIENTO PRÓXIMO</option>
+                <option value="Taller">EN REPARACIÓN</option>
                 </select>
               </div>
               <button type="submit" style={styles.submitBtn}>
