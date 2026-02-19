@@ -35,23 +35,49 @@ function App() {
   }
 
   async function manejarEnvioAuto(e) {
-    e.preventDefault()
-    const datos = { marca, modelo, año, placa, uso }
-
-    if (editandoId) {
-      const { error } = await supabase.from('vehiculos').update(datos).eq('id', editandoId)
-      if (!error) {
-        alert("✅ Vehículo actualizado")
-        setEditandoId(null)
-      }
-    } else {
-      const { error } = await supabase.from('vehiculos').insert([datos])
-      if (!error) alert("✅ Vehículo registrado")
-    }
-
-    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal')
-    fetchAutos()
+  e.preventDefault()
+  
+  // 1. Creamos el objeto con los datos limpios
+  const datos = { 
+    marca: marca, 
+    modelo: modelo, 
+    año: parseInt(año), // Aseguramos que el año sea número
+    placa: placa, 
+    uso: uso 
   }
+
+  if (editandoId) {
+    // 2. CASO EDICIÓN: Forzamos que el ID sea un número entero
+    const { error } = await supabase
+      .from('vehiculos')
+      .update(datos)
+      .eq('id', Number(editandoId)) // <--- CAMBIO CRÍTICO AQUÍ
+
+    if (error) {
+      alert("Error al actualizar: " + error.message)
+    } else {
+      alert("✅ Vehículo actualizado")
+      setEditandoId(null) // Salimos del modo edición
+    }
+  } else {
+    // 3. CASO NUEVO
+    const { error } = await supabase
+      .from('vehiculos')
+      .insert([datos])
+    
+    if (error) {
+      alert("Error al registrar: " + error.message)
+    } else {
+      alert("✅ Vehículo registrado")
+    }
+  }
+
+  // 4. LIMPIEZA TOTAL Y REFRESCO
+  setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal')
+  
+  // Forzamos la recarga de los datos de la base de datos
+  await fetchAutos() 
+}
 
   function prepararEdicion(auto) {
     setEditandoId(auto.id)
