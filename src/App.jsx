@@ -15,6 +15,7 @@ function App() {
   const [placa, setPlaca] = useState('')
   const [uso, setUso] = useState('Personal')
   const [salud, setSalud] = useState('Operativo')
+  const [frecuencia, setFrecuencia] = useState(3000);
 
   // --- CARGA DE DATOS ---
   useEffect(() => {
@@ -76,11 +77,34 @@ function App() {
     setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal'); setSalud('Operativo');
   }
 
+  async function resetearMantenimiento(auto) {
+  if (confirm(`¿Confirmas cambio de aceite para el ${auto.marca}? Se reiniciará el conteo.`)) {
+    const { error } = await supabase
+      .from('vehiculos')
+      .update({ km_ultimo_mant: auto.km_actual })
+      .eq('id', auto.id);
+    
+    if (!error) {
+      alert("✅ Servicio registrado. Barra reiniciada.");
+      fetchAutos(); // Refrescamos la lista
+    }
+  }
+}
+      const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
+      const meta = auto.frecuencia_mantenimiento || 3000;
+      const progresoVida = Math.max(0, ((meta - millasRecorridas) / meta) * 100);
+
+           // Determinamos el estado dinámicamente
+          let estadoAuto = 'Operativo';
+          if (millasRecorridas >= meta) estadoAuto = 'Taller';
+          else if (millasRecorridas >= meta * 0.9) estadoAuto = 'Preventivo';
+
+          const colorEstado = obtenerColor(estadoAuto);
   return (
     <div style={styles.appContainer}>
       {/* HEADER */}
       <header style={styles.header}>
-        <div style={styles.logoBadge}>NEXUS SYSTEMS</div>
+        <div style={styles.logoBadge}>NEXUS APP</div>
         <h1 style={styles.mainTitle}>Gestión de Flota</h1>
       </header>
 
@@ -97,8 +121,7 @@ function App() {
                 + NUEVA UNIDAD
               </button>
             </div>
-
-            <div style={styles.grid}>
+            <div style={styles.grid}>           
               {autos.map(auto => (
                 <div key={auto.id} style={styles.glassCard}>
                   <div style={styles.cardHeader}>
@@ -121,7 +144,9 @@ function App() {
                     <span style={styles.unitTag}>ID-{auto.id}</span>
                     <div style={styles.cardActions}>
                       <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
+                      <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#007AFF'}}>🔄</button>
                       <button onClick={() => borrarAuto(auto.id)} style={{...styles.iconBtn, color: '#ff453a'}}>✕</button>
+                      
                     </div>
                   </div>
                   <h2 style={styles.cardTitle}>{auto.marca} <span style={{fontWeight: 300}}>{auto.modelo}</span></h2>
@@ -182,6 +207,17 @@ function App() {
                 <option value="Taller">EN REPARACIÓN</option>
                 </select>
               </div>
+              <div style={styles.inputWrap}>
+               <label style={styles.label}>META DE MANTENIMIENTO (MILLAS)</label>
+              <input 
+               style={styles.input} 
+               type="number" 
+               value={frecuencia} 
+               onChange={e => setFrecuencia(e.target.value)} 
+               placeholder="Ej. 3000 o 5000"
+               required 
+                 />
+                </div>
               <button type="submit" style={styles.submitBtn}>
                 {editandoId ? 'GUARDAR CAMBIOS' : 'CONFIRMAR REGISTRO'}
               </button>
