@@ -41,8 +41,7 @@ function App() {
   // --- FUNCIONES DE ACCIÓN ---
   async function manejarEnvio(e) {
     e.preventDefault()
-    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud, frecuencia_mantenimiento: parseInt(frecuencia), km_actual: parseInt(kmActual), km_ultimo_mant: parseInt(kmUltimoMant)      
-    }
+    const datos = { marca, modelo, año: parseInt(año), placa, km_actual: parseInt(kmActual), km_ultimo_mant: parseInt(kmUltimoMant), uso, salud, frecuencia_mantenimiento: parseInt(frecuencia),}
     
     try {
       if (editandoId) {
@@ -78,7 +77,7 @@ function App() {
   function cerrarYLimpiar() {
     setMostrarModal(false)
     setEditandoId(null)
-    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal'); setSalud('Operativo');
+    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setKmActual(''); setKmUltimoMant(''); setUso('Personal'); setSalud('Operativo');
   }
     
 //// --- FUNCIONES DE APOYO ---
@@ -198,6 +197,30 @@ function App() {
                 <div style={styles.inputWrap}><label style={styles.label}>PLACA</label>
                   <input style={styles.input} value={placa} onChange={e => setPlaca(e.target.value)} required />
                 </div>
+                <div style={styles.inputRow}>
+  <div style={styles.inputWrap}>
+    <label style={styles.label}>MILLAS ACTUALES (TABLERO)</label>
+    <input 
+      style={styles.input} 
+      type="number" 
+      value={kmActual} 
+      onChange={e => setKmActual(e.target.value)} 
+      placeholder="Ej. 120500"
+      required 
+    />
+  </div>
+  <div style={styles.inputWrap}>
+    <label style={styles.label}>MILLAS ÚLTIMO SERVICIO</label>
+    <input 
+      style={styles.input} 
+      type="number" 
+      value={kmUltimoMant} 
+      onChange={e => setKmUltimoMant(e.target.value)} 
+      placeholder="Ej. 118000"
+      required 
+    />
+  </div>
+</div>
               </div>
               <div style={styles.inputWrap}>
                 <label style={styles.label}>TIPO DE USO</label>
