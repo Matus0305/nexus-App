@@ -34,49 +34,48 @@ function App() {
     if (data) setAutos(data)
   }
 
-  async function manejarEnvioAuto(e) {
-  e.preventDefault()
+ async function manejarEnvioAuto(e) {
+  e.preventDefault();
   
-  // 1. Creamos el objeto con los datos limpios
+  // Convertimos a los tipos de datos exactos que espera Supabase
   const datos = { 
-    marca: marca, 
-    modelo: modelo, 
-    año: parseInt(año), // Aseguramos que el año sea número
-    placa: placa, 
+    marca: marca.trim(), 
+    modelo: modelo.trim(), 
+    año: parseInt(año), 
+    placa: placa.trim(), 
     uso: uso 
-  }
+  };
 
   if (editandoId) {
-    // 2. CASO EDICIÓN: Forzamos que el ID sea un número entero
-    const { error } = await supabase
+    // IMPORTANTE: Usamos el ID directamente como se guardó
+    const { data, error } = await supabase
       .from('vehiculos')
       .update(datos)
-      .eq('id', Number(editandoId)) // <--- CAMBIO CRÍTICO AQUÍ
+      .match({ id: editandoId }); // 'match' es a veces más efectivo que 'eq' para IDs numéricos
 
     if (error) {
-      alert("Error al actualizar: " + error.message)
-    } else {
-      alert("✅ Vehículo actualizado")
-      setEditandoId(null) // Salimos del modo edición
+      alert("Error de Supabase: " + error.message);
+      return;
     }
-  } else {
-    // 3. CASO NUEVO
-    const { error } = await supabase
-      .from('vehiculos')
-      .insert([datos])
     
+    alert("✅ Cambios guardados en base de datos");
+    setEditandoId(null);
+  } else {
+    const { error } = await supabase.from('vehiculos').insert([datos]);
     if (error) {
-      alert("Error al registrar: " + error.message)
-    } else {
-      alert("✅ Vehículo registrado")
+      alert("Error al crear: " + error.message);
+      return;
     }
+    alert("✅ Vehículo registrado");
   }
 
-  // 4. LIMPIEZA TOTAL Y REFRESCO
-  setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal')
+  // Limpiar campos y RECARGAR
+  setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal');
   
-  // Forzamos la recarga de los datos de la base de datos
-  await fetchAutos() 
+  // Agregamos un pequeño retraso para dar tiempo a Supabase de propagar el cambio
+  setTimeout(() => {
+    fetchAutos();
+  }, 500);
 }
 
   function prepararEdicion(auto) {
