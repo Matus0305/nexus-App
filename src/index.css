@@ -1,3 +1,8 @@
+/* Importamos la tipografía INTER (La más recomendada para tu diseño) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap');
+
+/* Opcional: Si quieres un look más técnico para los números, añade esta también */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
 body, html, #root {
   margin: 0;
   padding: 0;

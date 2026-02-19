@@ -182,7 +182,7 @@ function App() {
 
 // --- OBJETO DE ESTILOS (Gris Carbón & Blanco Eléctrico) ---
 const styles = {
-  appContainer: { backgroundColor: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' },
+  appContainer: { backgroundColor: '#000', minHeight: '100vh', color: '#fff', fontFamily: "'Inter', sans-serif", WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale',},
   header: { padding: '60px 20px 20px', textAlign: 'center' },
   logoBadge: { fontSize: '0.6rem', letterSpacing: '4px', color: '#444', marginBottom: '10px', fontWeight: 'bold' },
   mainTitle: { fontSize: '2.2rem', fontWeight: '800', margin: 0, letterSpacing: '-1px' },
