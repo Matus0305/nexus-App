@@ -37,7 +37,7 @@ function App() {
   // --- FUNCIONES DE ACCIÓN ---
   async function manejarEnvio(e) {
     e.preventDefault()
-    const datos = { marca, modelo, año: parseInt(año), placa, uso }
+    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud}
     
     try {
       if (editandoId) {
@@ -59,7 +59,8 @@ function App() {
     setAño(auto.año || '')
     setPlaca(auto.placa || '')
     setUso(auto.uso || 'Personal')
-    setMostrarModal(true)
+    setSalud(auto.salud|| 'Operativo');
+    setMostrarModal(true);
   }
 
   async function borrarAuto(id) {
@@ -72,7 +73,7 @@ function App() {
   function cerrarYLimpiar() {
     setMostrarModal(false)
     setEditandoId(null)
-    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal')
+    setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal'); setSalud('Operativo');
   }
 
   return (
