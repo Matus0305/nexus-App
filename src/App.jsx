@@ -144,7 +144,9 @@ function App() {
                     <span style={styles.unitTag}>ID-{auto.id}</span>
                     <div style={styles.cardActions}>
                       <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
-                      <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#007AFF'}}>🔄</button>
+                      <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#32d74b', fontSize: '0.7rem', border: '1px solid #32d74b', padding: '4px 8px', borderRadius: '6px'}} 
+                      >SERVICIO REALIZADO 
+                      </button>
                       <button onClick={() => borrarAuto(auto.id)} style={{...styles.iconBtn, color: '#ff453a'}}>✕</button>
                       
                     </div>
