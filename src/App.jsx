@@ -38,7 +38,8 @@ function App() {
   // --- FUNCIONES DE ACCIÓN ---
   async function manejarEnvio(e) {
     e.preventDefault()
-    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud}
+    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud, frecuencia_mantenimiento: parseInt(frecuencia)      
+    }
     
     try {
       if (editandoId) {
@@ -76,30 +77,29 @@ function App() {
     setEditandoId(null)
     setMarca(''); setModelo(''); setAño(''); setPlaca(''); setUso('Personal'); setSalud('Operativo');
   }
+    
+//// --- FUNCIONES DE APOYO ---
+  const obtenerColor = (estado) => {
+    if (estado === 'Taller') return '#ff453a';
+    if (estado === 'Preventivo') return '#ffd60a';
+    return '#32d74b';
+  };
 
   async function resetearMantenimiento(auto) {
-  if (confirm(`¿Confirmas cambio de aceite para el ${auto.marca}? Se reiniciará el conteo.`)) {
-    const { error } = await supabase
-      .from('vehiculos')
-      .update({ km_ultimo_mant: auto.km_actual })
-      .eq('id', auto.id);
-    
-    if (!error) {
-      alert("✅ Servicio registrado. Barra reiniciada.");
-      fetchAutos(); // Refrescamos la lista
+    if (confirm(`¿Confirmas cambio de aceite para el ${auto.marca}? Se reiniciará el conteo.`)) {
+      const { error } = await supabase
+        .from('vehiculos')
+        .update({ km_ultimo_mant: auto.km_actual })
+        .eq('id', auto.id);
+      
+      if (!error) {
+        alert("✅ Servicio registrado. Barra reiniciada.");
+        fetchAutos();
+      }
     }
   }
-}
-      const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
-      const meta = auto.frecuencia_mantenimiento || 3000;
-      const progresoVida = Math.max(0, ((meta - millasRecorridas) / meta) * 100);
 
-           // Determinamos el estado dinámicamente
-          let estadoAuto = 'Operativo';
-          if (millasRecorridas >= meta) estadoAuto = 'Taller';
-          else if (millasRecorridas >= meta * 0.9) estadoAuto = 'Preventivo';
-
-          const colorEstado = obtenerColor(estadoAuto);
+  // --- INICIO DEL RENDER ---
   return (
     <div style={styles.appContainer}>
       {/* HEADER */}
@@ -121,48 +121,63 @@ function App() {
                 + NUEVA UNIDAD
               </button>
             </div>
-            <div style={styles.grid}>           
-              {autos.map(auto => (
-                <div key={auto.id} style={styles.glassCard}>
-                  <div style={styles.cardHeader}>
-                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <div style={{
-                       width: '10px', 
-                       height: '10px', 
-                       borderRadius: '50%', 
-                       backgroundColor: 
-                       auto.salud ?.toLowerCase() === 'Taller' ? '#ff453a' : 
-                       auto.salud ?.toLowerCase()  === 'Preventivo' ? '#ffd60a' : '#32d74b',
-                       boxShadow: `0 0 12px ${
-                        auto.salud?.toLowerCase() === 'Taller' ? '#ff453a' : 
-                        auto.salud?.toLowerCase() === 'Preventivo' ? '#ffd60a' : '#32d74b'
-                       }`,
-                       transition: 'all 0.3s ease'
-                    }}></div>
-                    <span style={styles.unitTag}>UNIT-{auto.id}</span>
-                     </div>
-                    <span style={styles.unitTag}>ID-{auto.id}</span>
-                    <div style={styles.cardActions}>
-                      <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
-                      <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#32d74b', fontSize: '0.7rem', border: '1px solid #32d74b', padding: '4px 8px', borderRadius: '6px'}} 
-                      >SERVICIO REALIZADO 
-                      </button>
-                      <button onClick={() => borrarAuto(auto.id)} style={{...styles.iconBtn, color: '#ff453a'}}>✕</button>
-                      
-                    </div>
-                  </div>
-                  <h2 style={styles.cardTitle}>{auto.marca} <span style={{fontWeight: 300}}>{auto.modelo}</span></h2>
-                  <div style={styles.cardFooter}>
-                    <div style={styles.metaData}>
-                      {auto.año} <span style={{margin:'0 8px', opacity:0.2}}>|</span> {auto.placa?.toUpperCase()}
-                    </div>
-                    <div style={styles.statusBadge}>{auto.uso?.toUpperCase()}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+           {/* LISTADO DE AUTOS */}
+<div style={styles.grid}>           
+  {autos.map(auto => {
+    // --- LÓGICA DINÁMICA DENTRO DEL MAP ---
+    const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
+    const meta = auto.frecuencia_mantenimiento || 3000;
+    const progresoVida = Math.max(0, ((meta - millasRecorridas) / meta) * 100);
+
+    let estadoAuto = 'Operativo';
+    if (millasRecorridas >= meta) estadoAuto = 'Taller';
+    else if (millasRecorridas >= meta * 0.9) estadoAuto = 'Preventivo';
+
+    const colorEstado = obtenerColor(estadoAuto);
+
+    // --- RETORNO VISUAL ---
+    return (
+      <div key={auto.id} style={styles.glassCard}>
+        <div style={styles.cardHeader}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <div style={{
+              width: '10px', 
+              height: '10px', 
+              borderRadius: '50%', 
+              backgroundColor: colorEstado, 
+              boxShadow: `0 0 12px ${colorEstado}`,
+              transition: 'all 0.3s ease'
+            }}></div>
+            <span style={styles.unitTag}>UNIT-{auto.id}</span>
+          </div>
+          <div style={styles.cardActions}>
+            <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
+            <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#32d74b', fontSize: '0.7rem', border: '1px solid #32d74b', padding: '4px 8px', borderRadius: '6px'}}>
+              RESET MI
+            </button>
+            <button onClick={() => borrarAuto(auto.id)} style={{...styles.iconBtn, color: '#ff453a'}}>✕</button>
+          </div>
+        </div>
+        
+        <h2 style={styles.cardTitle}>{auto.marca} <span style={{fontWeight: 300}}>{auto.modelo}</span></h2>
+        
+        {/* BARRA DE PROGRESO */}
+        <div style={{height: '4px', background: '#111', borderRadius: '10px', marginTop: '15px', overflow: 'hidden'}}>
+          <div style={{height: '100%', width: `${progresoVida}%`, backgroundColor: colorEstado, transition: 'width 1s ease'}}></div>
+        </div>
+
+        <div style={styles.cardFooter}>
+          <div style={styles.metaData}>
+            {auto.año} | {auto.placa?.toUpperCase()}
+          </div>
+          <div style={{...styles.statusBadge, color: colorEstado}}>{estadoAuto.toUpperCase()}</div>
+        </div>
+      </div>
+    );
+  })} 
+</div> 
+</>   
+)}
       </main>
 
       {/* MODAL GLASSMORPHISM */}

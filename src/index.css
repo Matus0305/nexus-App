@@ -4,9 +4,11 @@
 /* Opcional: Si quieres un look más técnico para los números, añade esta también */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
 body, html, #root {
+  background-color: #000;
   margin: 0;
   padding: 0;
-  background-color: #000000;
+  color: white;
+  font-family:Inter, sans-serif;
   min-height: 100vh;
   width: 100%;
 }
