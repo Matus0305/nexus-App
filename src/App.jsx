@@ -13,6 +13,7 @@ function App() {
   const [año, setAño] = useState('')
   const [placa, setPlaca] = useState('')
   const [uso, setUso] = useState('Personal')
+  const [editandoId, setEditandoId] = useState(null);
 
   // --- ESTADOS PARA FORMULARIO JORNADA ---
   const [plataforma, setPlataforma] = useState('Uber')
@@ -35,20 +36,40 @@ function App() {
     if (data) setAutos(data)
   }
 
-  async function agregarAuto(e) {
-    e.preventDefault()
-    const { error } = await supabase
-      .from('vehiculos')
-      .insert([{ marca, modelo, año, placa, uso, estado: 'DISPONIBLE' }])
-    
+ async function manejarEnvioAuto(e) {
+  e.preventDefault();
+  
+  const datos = { marca, modelo, año, placa, uso };
+
+  if (editandoId) {
+    // CASO: EDITAR
+    const { error } = await supabase.from('vehiculos').update(datos).eq('id', editandoId);
     if (!error) {
-      setMarca(''); setModelo(''); setAño(''); setPlaca('');
-      fetchAutos()
-      alert("✅ Vehículo registrado")
+      alert("✅ Vehículo actualizado");
+      setEditandoId(null); // Salimos del modo edición
     }
+  } else {
+    // CASO: NUEVO
+    const { error } = await supabase.from('vehiculos').insert([datos]);
+    if (!error) alert("✅ Vehículo registrado");
   }
 
-  async function borrarAuto(id) {
+  // Limpiar campos y refrescar
+  setMarca(''); setModelo(''); setAño(''); setPlaca('');
+  fetchAutos();
+}
+
+  function prepararEdicion(auto) {
+    setEditandoId(auto.id); // Guardamos el ID para saber cuál editar
+    setMarca(auto.marca);
+    setModelo(auto.modelo);
+    setAño(auto.año);
+    setPlaca(auto.placa);
+    setUso(auto.uso);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla al formulario
+ }
+
+   async function borrarAuto(id) {
     if (confirm("¿Eliminar vehículo de la flota?")) {
       const { error } = await supabase.from('vehiculos').delete().eq('id', id)
       if (!error) fetchAutos()
@@ -130,7 +151,15 @@ function App() {
                   <option value="Mantenimiento">Taller</option>
                 </select>
               </div>
-              <button type="submit" style={buttonStyle}>REGISTRAR VEHÍCULO</button>
+             <button type="submit" style={buttonStyle}>
+  {editandoId ? 'GUARDAR CAMBIOS' : 'REGISTRAR VEHÍCULO'}
+</button>
+{editandoId && (
+  <button onClick={() => { setEditandoId(null); setMarca(''); setModelo(''); setAño(''); setPlaca(''); }} 
+          style={{ ...buttonStyle, backgroundColor: '#333', color: '#fff', marginTop: '5px' }}>
+    CANCELAR EDICIÓN
+  </button>
+  )}
             </form>
 
             <div style={gridStyle}>
@@ -142,7 +171,11 @@ function App() {
                       <h3 style={cardTitle}>{auto.marca} {auto.modelo}</h3>
                       <p style={cardInfo}>{auto.uso}</p>
                     </div>
-                    <button onClick={() => borrarAuto(auto.id)} style={deleteBtn}>✕</button>
+                    <button onClick={() => borrarAuto(auto.id)} style={deleteBtn}>✕ <div style={{ display: 'flex', gap: '15px' }}>
+  <button onClick={() => prepararEdicion(auto)} style={editBtnStyle}>✎</button>
+  <button onClick={() => borrarAuto(auto.id)} style={deleteBtn}>✕</button>
+</div>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -262,5 +295,5 @@ const accountItem = { display: 'flex', justifyContent: 'space-between', padding:
 const navStyle = { position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: '360px', backgroundColor: 'rgba(10, 10, 10, 0.7)', backdropFilter: 'blur(25px)', display: 'flex', justifyContent: 'space-around', padding: '18px 0', borderRadius: '35px', border: '1px solid rgba(255,255,255,0.05)' }
 const navItem = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }
 const navLabel = { fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }
-
+const editBtnStyle = { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 export default App
