@@ -16,6 +16,9 @@ function App() {
   const [uso, setUso] = useState('Personal')
   const [salud, setSalud] = useState('Operativo')
   const [frecuencia, setFrecuencia] = useState(3000);
+  const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
+  const [kmActual, setKmActual] = useState(0);
+  const [kmUltimoMant, setKmUltimoMant] = useState(0);
 
   // --- CARGA DE DATOS ---
   useEffect(() => {
@@ -38,7 +41,7 @@ function App() {
   // --- FUNCIONES DE ACCIÓN ---
   async function manejarEnvio(e) {
     e.preventDefault()
-    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud, frecuencia_mantenimiento: parseInt(frecuencia)      
+    const datos = { marca, modelo, año: parseInt(año), placa, uso, salud, frecuencia_mantenimiento: parseInt(frecuencia), km_actual: parseInt(kmActual), km_ultimo_mant: parseInt(kmUltimoMant)      
     }
     
     try {
@@ -85,6 +88,14 @@ function App() {
     return '#32d74b';
   };
 
+  const obtenerSaludDinamica = (auto) => {
+  const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
+  const meta = auto.frecuencia_mantenimiento || 3000;
+  if (millasRecorridas >= meta) return 'Taller';
+  if (millasRecorridas >= meta * 0.9) return 'Preventivo';
+  return 'Operativo';
+};
+
   async function resetearMantenimiento(auto) {
     if (confirm(`¿Confirmas cambio de aceite para el ${auto.marca}? Se reiniciará el conteo.`)) {
       const { error } = await supabase
@@ -124,58 +135,38 @@ function App() {
            {/* LISTADO DE AUTOS */}
 <div style={styles.grid}>           
   {autos.map(auto => {
-    // --- LÓGICA DINÁMICA DENTRO DEL MAP ---
-    const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
-    const meta = auto.frecuencia_mantenimiento || 3000;
-    const progresoVida = Math.max(0, ((meta - millasRecorridas) / meta) * 100);
+  const millasRecorridas = (auto.km_actual || 0) - (auto.km_ultimo_mant || 0);
+  const meta = auto.frecuencia_mantenimiento || 3000;
+  const progresoVida = Math.max(0, ((meta - millasRecorridas) / meta) * 100);
 
-    let estadoAuto = 'Operativo';
-    if (millasRecorridas >= meta) estadoAuto = 'Taller';
-    else if (millasRecorridas >= meta * 0.9) estadoAuto = 'Preventivo';
+  let estadoAuto = 'Operativo';
+  if (millasRecorridas >= meta) estadoAuto = 'Taller';
+  else if (millasRecorridas >= meta * 0.9) estadoAuto = 'Preventivo';
 
-    const colorEstado = obtenerColor(estadoAuto);
+  const colorEstado = obtenerColor(estadoAuto);
 
-    // --- RETORNO VISUAL ---
-    return (
-      <div key={auto.id} style={styles.glassCard}>
-        <div style={styles.cardHeader}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <div style={{
-              width: '10px', 
-              height: '10px', 
-              borderRadius: '50%', 
-              backgroundColor: colorEstado, 
-              boxShadow: `0 0 12px ${colorEstado}`,
-              transition: 'all 0.3s ease'
-            }}></div>
-            <span style={styles.unitTag}>UNIT-{auto.id}</span>
-          </div>
-          <div style={styles.cardActions}>
-            <button onClick={() => prepararEdicion(auto)} style={styles.iconBtn}>✎</button>
-            <button onClick={() => resetearMantenimiento(auto)} style={{...styles.iconBtn, color: '#32d74b', fontSize: '0.7rem', border: '1px solid #32d74b', padding: '4px 8px', borderRadius: '6px'}}>
-              RESET MI
-            </button>
-            <button onClick={() => borrarAuto(auto.id)} style={{...styles.iconBtn, color: '#ff453a'}}>✕</button>
-          </div>
-        </div>
-        
-        <h2 style={styles.cardTitle}>{auto.marca} <span style={{fontWeight: 300}}>{auto.modelo}</span></h2>
-        
-        {/* BARRA DE PROGRESO */}
-        <div style={{height: '4px', background: '#111', borderRadius: '10px', marginTop: '15px', overflow: 'hidden'}}>
-          <div style={{height: '100%', width: `${progresoVida}%`, backgroundColor: colorEstado, transition: 'width 1s ease'}}></div>
-        </div>
-
-        <div style={styles.cardFooter}>
-          <div style={styles.metaData}>
-            {auto.año} | {auto.placa?.toUpperCase()}
-          </div>
-          <div style={{...styles.statusBadge, color: colorEstado}}>{estadoAuto.toUpperCase()}</div>
-        </div>
+  return (
+    <div 
+      key={auto.id} 
+      onClick={() => setVehiculoSeleccionado(auto)} 
+      style={styles.luxuryCard}
+    >
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <h2 style={{fontSize:'1.1rem', margin:0}}>{auto.marca} {auto.modelo}</h2>
+        <div style={{
+          width:'8px', 
+          height:'8px', 
+          borderRadius:'50%', 
+          backgroundColor: colorEstado,
+          boxShadow: `0 0 10px ${colorEstado}`
+        }}></div>
       </div>
-    );
-  })} 
-</div> 
+      <p style={{fontSize:'0.6rem', color:'#444', marginTop:'10px', letterSpacing:'1px'}}>
+        {auto.placa?.toUpperCase()} — {auto.km_actual?.toLocaleString()} MI
+      </p>
+    </div>
+  );
+})}</div> 
 </>   
 )}
       </main>
@@ -242,6 +233,73 @@ function App() {
           </div>
         </div>
       )}
+      {/* VISTA DE DETALLE SOMBRÍA */}
+{vehiculoSeleccionado && (
+  <div style={styles.detailOverlay}>
+    <div style={styles.detailContent}>
+      <div style={{display:'flex', justifyContent:'space-between', marginBottom:'40px'}}>
+        <button onClick={() => setVehiculoSeleccionado(null)} style={styles.secondaryBtn}>← VOLVER</button>
+        <div style={{display:'flex', gap:'10px'}}>
+          <button onClick={() => { prepararEdicion(vehiculoSeleccionado); setVehiculoSeleccionado(null); }} style={styles.secondaryBtn}>EDITAR</button>
+          <button onClick={() => { borrarAuto(vehiculoSeleccionado.id); setVehiculoSeleccionado(null); }} style={{...styles.secondaryBtn, color:'#555'}}>BORRAR</button>
+        </div>
+      </div>
+
+      <div style={{marginBottom:'50px'}}>
+        <h1 style={{fontSize:'2.8rem', fontWeight:'800', margin:0, letterSpacing:'-2px'}}>
+          {vehiculoSeleccionado.marca} <span style={{fontWeight:'200', color:'#333'}}>{vehiculoSeleccionado.modelo}</span>
+        </h1>
+        <p style={{color:'#222', fontSize:'0.6rem', letterSpacing:'4px', marginTop:'15px'}}>SISTEMA DE GESTIÓN NEXUS</p>
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+        <div style={styles.infoTile}>
+          <label style={styles.label}>ODÓMETRO</label>
+          <div style={{fontSize:'1.2rem', fontWeight:'700'}}>{vehiculoSeleccionado.km_actual?.toLocaleString()} <small style={{fontSize:'0.6rem', color:'#333'}}>mi</small></div>
+        </div>
+        <div style={styles.infoTile}>
+          <label style={styles.label}>PLACA</label>
+          <div style={{fontSize:'1.2rem', fontWeight:'700'}}>{vehiculoSeleccionado.placa?.toUpperCase()}</div>
+        </div>
+        <div style={styles.infoTile}>
+          <label style={styles.label}>META SERVICIO</label>
+          <div style={{fontSize:'1.2rem', fontWeight:'700'}}>{vehiculoSeleccionado.frecuencia_mantenimiento} <small style={{fontSize:'0.6rem', color:'#333'}}>mi</small></div>
+        </div>
+        <div style={styles.infoTile}>
+          <label style={styles.label}>AÑO</label>
+          <div style={{fontSize:'1.2rem', fontWeight:'700'}}>{vehiculoSeleccionado.año}</div>
+        </div>
+      </div>
+
+      <div style={{marginTop:'40px', borderTop:'1px solid #111', paddingTop:'40px'}}>
+        <label style={styles.label}>ESTADO DE VIDA DEL ACEITE</label>
+    <h3 style={{
+    color: obtenerColor(obtenerSaludDinamica(vehiculoSeleccionado)), 
+    fontSize: '1.2rem', 
+    marginTop: '10px',
+    fontWeight: '800',
+    opacity: 0.8 
+  }}>
+    {obtenerSaludDinamica(vehiculoSeleccionado).toUpperCase()}
+  </h3>
+
+  <div style={{height:'6px', background:'#0a0a0a', borderRadius:'10px', marginTop:'20px', overflow:'hidden'}}>
+    <div style={{
+      height:'100%', 
+      width: `${Math.max(0, Math.min(100, ((vehiculoSeleccionado.frecuencia_mantenimiento - (vehiculoSeleccionado.km_actual - vehiculoSeleccionado.km_ultimo_mant)) / vehiculoSeleccionado.frecuencia_mantenimiento) * 100))}%`, 
+      backgroundColor: obtenerColor(obtenerSaludDinamica(vehiculoSeleccionado)) // Opcional: que la barra también cambie de color
+    }}></div>
+  </div>
+        <button 
+          onClick={() => { resetearMantenimiento(vehiculoSeleccionado); setVehiculoSeleccionado(null); }} 
+          style={styles.accentBtn}
+        >
+          REGISTRAR MANTENIMIENTO REALIZADO
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* NAV INFERIOR */}
       <nav style={styles.navBar}>
@@ -272,7 +330,6 @@ const styles = {
   statLabel: { fontSize: '0.6rem', color: '#444', letterSpacing: '1px' },
   addBtn: { background: '#fff', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: '800', fontSize: '0.7rem', cursor: 'pointer' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
-  glassCard: { background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px', backdropFilter: 'blur(10px)' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: '15px' },
   unitTag: { fontSize: '0.6rem', color: '#333', fontWeight: 'bold' },
   cardTitle: { fontSize: '1.4rem', margin: '0 0 15px 0', color: '#fff' },
@@ -291,7 +348,37 @@ const styles = {
   input: { background: '#111', border: '1px solid #1a1a1a', padding: '15px', borderRadius: '14px', color: '#fff', fontSize: '0.9rem', outline: 'none', width: '100%', boxSizing: 'border-box' },
   submitBtn: { marginTop: '10px', padding: '18px', borderRadius: '16px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: 'bold', cursor: 'pointer' },
   navBar: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '85px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(25px)', borderTop: '1px solid #111', display: 'flex', justifyContent: 'space-around', zIndex: 900 },
-  navTab: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '1px', cursor: 'pointer', flex: 1 }
+  navTab: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '1px', cursor: 'pointer', flex: 1 },
+  luxuryCard: {
+    background: '#070707',
+    borderRadius: '20px',
+    padding: '25px',
+    border: '1px solid #111',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer'
+  },
+  detailOverlay: {
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    backgroundColor: '#000', zIndex: 2000, overflowY: 'auto',
+    padding: '40px 20px', boxSizing: 'border-box'
+  },
+  detailContent: { maxWidth: '500px', margin: '0 auto' },
+  infoTile: {
+    background: '#030303',
+    border: '1px solid #0a0a0a',
+    padding: '20px',
+    borderRadius: '16px'
+  },
+  secondaryBtn: {
+    background: 'none', border: '1px solid #111', color: '#444',
+    padding: '10px 20px', borderRadius: '12px', fontSize: '0.6rem',
+    cursor: 'pointer', letterSpacing: '1px'
+  },
+  accentBtn: {
+    background: '#fff', color: '#000', border: 'none',
+    padding: '18px', borderRadius: '14px', fontWeight: '900',
+    width: '100%', marginTop: '30px', cursor: 'pointer', fontSize: '0.7rem'
+  }
 }
 
 export default App
